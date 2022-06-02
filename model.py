@@ -71,7 +71,7 @@ class NaiveNet(nn.Module):
         self.fc1 = nn.Linear(43200, 4320)
         self.fc2 = nn.Linear(4320, 432)
         self.fc3 = nn.Linear(432, 40)
-        self.fc4 = nn.Linear(40, 1)
+        self.fc4 = nn.Linear(40, 2)
 
     def forward(self, x):
         """
@@ -87,25 +87,50 @@ class NaiveNet(nn.Module):
         I can do right now
         """
         x = F.relu(self.conv1(x))
-        print('Shape after first convolution: {}'.format(x.shape))
+        #print('Shape after first convolution: {}'.format(x.shape))
         x = self.pool(x)
-        print('Shape after first pool: {}'.format(x.shape))
+        #print('Shape after first pool: {}'.format(x.shape))
         x = F.relu(self.conv2(x))
-        print('Shape after second convolution: {}'.format(x.shape))
+        #print('Shape after second convolution: {}'.format(x.shape))
         x = self.pool(x)
-        print('Shape after second pool: {}'.format(x.shape))
+        #print('Shape after second pool: {}'.format(x.shape))
         x = F.relu(self.conv3(x))
-        print('Shape after third convolution: {}'.format(x.shape))
+        #print('Shape after third convolution: {}'.format(x.shape))
         x = self.pool(x)
-        print('Shape after third pool: {}'.format(x.shape))
+        #print('Shape after third pool: {}'.format(x.shape))
         x = F.relu(self.conv4(x))
-        print('Shape after first convolution: {}'.format(x.shape))
+        #print('Shape after first convolution: {}'.format(x.shape))
         x = self.pool(x)
-        print('Shape after fourth pool: {}'.format(x.shape))
+        #print('Shape after fourth pool: {}'.format(x.shape))
         x = torch.flatten(x, 1)
-        print('shape after flattening: {}'.format(x.shape))
+        #print('shape after flattening: {}'.format(x.shape))
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, .2)
+        x = F.relu(self.fc2(x))
+        x = F.dropout(x, .2)
+        x = F.relu(self.fc3(x))
+        x = F.dropout(x, .2)
+        x = self.fc4(x)
 
         
-        return 
+        return x
         
+def get_validation_loss(model,loss_fn, validation_dataloader):
+    """
+    Be careful with what your reduction on the 
+    dataloader is.
+    I am going to use 'sum'
+    as the reduction and get the mean
+    loss over the entire validation
+    dataset
+    """
+    running_loss = 0
+    model.eval()
+
+    for xb, yb in validation_dataloader:
+        outputs = model(xb)
+        running_loss += loss_fn(outputs, yb).item()
+
+    avg_loss = running_loss/ float(len(validation_dataloader.dataset))
+    return avg_loss
 
