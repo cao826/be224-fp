@@ -114,6 +114,84 @@ class NaiveNet(nn.Module):
 
         
         return x
+
+
+class NaiveNetSigmoid(nn.Module):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+                in_channels = 3,
+                out_channels = 6,
+                kernel_size = (3,3)
+                )
+        self.conv2 = nn.Conv2d(
+                in_channels = 6,
+                out_channels = 12,
+                kernel_size = (3,3)
+                )
+        self.conv3 = nn.Conv2d(
+                in_channels = 12,
+                out_channels = 24,
+                kernel_size = (3,3)
+                )
+        self.conv4 = nn.Conv2d(
+                in_channels = 24,
+                out_channels = 48,
+                kernel_size = (3,3)
+                )
+        self.pool = nn.MaxPool2d(2,2)
+        self.output_activation = nn.Sigmoid()
+
+        self.fc1 = nn.Linear(43200, 4320)
+        self.fc2 = nn.Linear(4320, 432)
+        self.fc3 = nn.Linear(432, 40)
+        self.fc4 = nn.Linear(40, 1)
+
+    def forward(self, x):
+        """
+        The shape after running 
+        input through all the 
+        convolution and pooling
+        layers is 
+        43200
+        I computed this manually 
+        and am adding it manually
+        this is not good practice
+        but this is the best 
+        I can do right now
+        """
+        x = F.relu(self.conv1(x))
+        #print('Shape after first convolution: {}'.format(x.shape))
+        x = self.pool(x)
+        #print('Shape after first pool: {}'.format(x.shape))
+        x = F.relu(self.conv2(x))
+        #print('Shape after second convolution: {}'.format(x.shape))
+        x = self.pool(x)
+        #print('Shape after second pool: {}'.format(x.shape))
+        x = F.relu(self.conv3(x))
+        #print('Shape after third convolution: {}'.format(x.shape))
+        x = self.pool(x)
+        #print('Shape after third pool: {}'.format(x.shape))
+        x = F.relu(self.conv4(x))
+        #print('Shape after first convolution: {}'.format(x.shape))
+        x = self.pool(x)
+        #print('Shape after fourth pool: {}'.format(x.shape))
+        x = torch.flatten(x, 1)
+        #print('shape after flattening: {}'.format(x.shape))
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, .2)
+        x = F.relu(self.fc2(x))
+        x = F.dropout(x, .2)
+        x = F.relu(self.fc3(x))
+        x = F.dropout(x, .2)
+        x = self.fc4(x)
+
+        
+        return self.output_activation(x)
         
 def get_validation_loss(model,loss_fn, validation_dataloader):
     """
@@ -129,7 +207,7 @@ def get_validation_loss(model,loss_fn, validation_dataloader):
 
     for xb, yb in validation_dataloader:
         outputs = model(xb)
-        running_loss += loss_fn(outputs, yb).item()
+        running_loss += loss_fn(outputs, yb.to(torch.int64)).item()
 
     avg_loss = running_loss/ float(len(validation_dataloader.dataset))
     return avg_loss

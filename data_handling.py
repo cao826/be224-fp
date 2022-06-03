@@ -16,7 +16,7 @@ def change_to_numeric_binary(boolean_string):
     value = 0
     if boolean_string == 'yes':
                 value = 1
-    return value
+    return float(value)
 
 class NeedleImageDataset(Dataset):
     def __init__(self, path2data, path2labels, transform, data_type='train'):
