@@ -11,3 +11,5 @@ code/notebooks/data
 __pycache__
 __pycache__/
 **/__pycache__/
+**.swp
+*.swp
