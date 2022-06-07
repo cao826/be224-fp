@@ -115,6 +115,71 @@ class NaiveNet(nn.Module):
         
         return x
 
+def get_validation_loss(model,loss_fn, validation_dataloader):
+    """
+    Be careful with what your reduction on the 
+    dataloader is.
+    I am going to use 'mean'
+    as the reduction and get the mean
+    of the mean loss across all 
+    minibatches in the training dataloader
+    """
+    running_loss = 0
+    model.eval()
+
+    for xb, yb in validation_dataloader:
+        outputs = model(xb)
+        running_loss += loss_fn(outputs, yb.to(torch.int64)).item()
+
+    avg_loss = running_loss/ float(len(validation_dataloader.dataset))
+    return avg_loss
+
+def train_on_minibatch(model, inputs, labels, loss_fn, optimizer):
+    """
+    """
+    model.train()
+    outputs = model(inputs)
+    loss = loss_fn(outputs, labels.to(torch.int64))
+    loss.backward()
+    optimizer.step()
+    return loss.item()
+
+def train_on_epoch(model, dataloader, loss_fn, optimizer):
+    """
+    """
+    epoch_loss = 0
+    running_loss = 0
+    for i, batch in enumerate(dataloader):
+        inputs, labels = batch
+        new_loss = train_on_minibatch(
+            model = model,
+            inputs = inputs, 
+            labels = labels,
+            loss_fn = loss_fn,
+            optimizer = optimizer
+        )
+        running_loss += new_loss
+        epoch_loss += new_loss
+        if i % 10 == 9:    # print every 10 mini-batches
+            print('Mean of loss reduction on minibatch {}: {}'.format(i+1, running_loss / 10.0))
+            #print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 10:.3f}')
+            running_loss = 0.0
+    mean_loss = epoch_loss / float(len(dataloader))
+    return mean_loss
+
+def get_accuracy(preds, labels, activation):
+    """
+    """
+    probs = activation(preds)
+    classes = torch.argmax(probs, dim=1)
+    num_correct = sum(classes == labels).item()
+    num_examples = preds.shape[0]
+    return num_correct / float(num_examples)
+
+"""
+The code below is code that I am not currently using, but mayyyybbbbbeeeee will use later
+"""
+
 
 class NaiveNetSigmoid(nn.Module):
     """
@@ -192,23 +257,3 @@ class NaiveNetSigmoid(nn.Module):
 
         
         return self.output_activation(x)
-        
-def get_validation_loss(model,loss_fn, validation_dataloader):
-    """
-    Be careful with what your reduction on the 
-    dataloader is.
-    I am going to use 'sum'
-    as the reduction and get the mean
-    loss over the entire validation
-    dataset
-    """
-    running_loss = 0
-    model.eval()
-
-    for xb, yb in validation_dataloader:
-        outputs = model(xb)
-        running_loss += loss_fn(outputs, yb.to(torch.int64)).item()
-
-    avg_loss = running_loss/ float(len(validation_dataloader.dataset))
-    return avg_loss
-
