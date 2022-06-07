@@ -131,7 +131,7 @@ def get_validation_loss(model,loss_fn, validation_dataloader):
         outputs = model(xb)
         running_loss += loss_fn(outputs, yb.to(torch.int64)).item()
 
-    avg_loss = running_loss/ float(len(validation_dataloader.dataset))
+    avg_loss = running_loss/ float(len(validation_dataloader))
     return avg_loss
 
 def train_on_minibatch(model, inputs, labels, loss_fn, optimizer):
@@ -175,6 +175,20 @@ def get_accuracy(preds, labels, activation):
     num_correct = sum(classes == labels).item()
     num_examples = preds.shape[0]
     return num_correct / float(num_examples)
+
+def get_accuracy_on_dataloader(model, dataloader, activation):
+    """
+    """
+    running_accuracy = 0.0
+    for batch in dataloader:
+        inputs, labels = batch
+        outputs = model(inputs)
+        running_accuracy += get_accuracy(
+            preds = outputs,
+            labels = labels, 
+            activation = activation)
+    mean_accuracy = running_accuracy / float(len(dataloader))
+    return mean_accuracy
 
 """
 The code below is code that I am not currently using, but mayyyybbbbbeeeee will use later
